@@ -10,7 +10,7 @@ from gcsbm.csbm import NULL_LABEL, CSBMParamPrior, simulate
 from graphany.gnns import GraphAny
 
 
-def create_opt(model: nnx.Module, lr: float = 1e-3):
+def create_opt(model: nnx.Module, lr: float = 1e-2):
     optimizer = optax.adam(lr)
     return nnx.Optimizer(model, optimizer, wrt=nnx.Param)
 
@@ -37,7 +37,8 @@ def train_on_csbm(
             adj, x, y, train_mask
         )  # (batch_size, num_nodes, num_classes)
 
-        safe_preds = jnp.where(y == 1, preds, 1.0)
+        preds = nnx.softmax(preds, axis=-1)
+        safe_preds = jnp.where(y == 1, preds + 1e-6, 1.0)
         loss = -jnp.log(safe_preds).sum(axis=-1).mean()
         return loss
 
