@@ -124,10 +124,13 @@ class GraphAny(nnx.Module):
         )  # (batch_size, num_nodes, self.all_channels, self.all_channels)
 
         # Reshape the distances
-        eye_mask = jnp.eye(self.all_channels, dtype=bool)
-        p_ij = dist[
-            ..., ~eye_mask
-        ]  # (batch_size, num_nodes, self.all_channels * (self.all_channels  - 1))
+        r_u, c_u = jnp.triu_indices(self.all_channels, k=1)
+        r_l, c_l = jnp.tril_indices(self.all_channels, k=-1)
+
+        p_ij = jnp.concatenate(
+            [dist[..., r_u, c_u], dist[..., r_l, c_l]],
+            axis=-1,
+        )  # (batch_size, num_nodes, self.all_channels * (self.all_channels  - 1))
 
         # Compute the normalized features
         batch_size, num_nodes, _ = p_ij.shape
