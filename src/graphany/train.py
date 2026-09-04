@@ -43,7 +43,7 @@ def train_on_csbm(
 
     simulate_vmap = jax.vmap(
         partial(
-            simulate, theta_prior=theta_prior, num_nodes=num_nodes, sigma=0.5
+            simulate, theta_prior=theta_prior, num_nodes=num_nodes, sigma=2.0
         ),
         in_axes=(0,),
         out_axes=0,
