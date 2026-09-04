@@ -49,15 +49,18 @@ def train_on_csbm(
         out_axes=0,
     )
 
+    def to_onehot(labels: jax.Array):
+        train_mask = y != NULL_LABEL
+        return jax.nn.one_hot(y, num_classes=num_labels), train_mask
+
+    # Training
     for _ in (pbar := tqdm.trange(iterations)):
         key, *subkeys = jax.random.split(key, batch_size + 1)
         subkeys = jnp.stack(subkeys)
 
         # Simulate the data
         (adj, y, x), _ = simulate_vmap(subkeys)
-        train_mask = y != NULL_LABEL
-
-        y = jax.nn.one_hot(y, num_classes=num_labels)
+        y, train_mask = to_onehot(y)
 
         # Compute the loss function and update the model
         loss, grads = nnx.value_and_grad(loss_fn, argnums=0)(
@@ -66,6 +69,18 @@ def train_on_csbm(
         opt.update(model, grads)
 
         pbar.set_postfix(loss=f"{loss:.2e}")
+
+    # Inference
+    keys = jax.random.split(key, batch_size)
+    key = jnp.stack(keys)
+
+    (adj, y, x), (true_labels, _, _) = simulate_vmap(keys)
+    y, train_mask = to_onehot(y)
+    preds = model(adj, x, y, train_mask)
+    preds = jnp.argmax(preds, axis=-1)
+    acc = (preds == true_labels)[~train_mask].mean()
+
+    print(acc)
 
     return model
 
