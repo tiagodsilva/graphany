@@ -9,5 +9,8 @@ dependencies = [
     "jax>=0.11.1",
 ]
 
+[tool.pyright]
+reportCallIssue = false
+
 [tool.uv.sources]
 gcsbm = { git = "https://github.com/tiagodsilva/gcsbm" }
